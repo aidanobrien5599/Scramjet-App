@@ -6,21 +6,43 @@ const searchEngine = document.getElementById("sj-search-engine");
 const error = document.getElementById("sj-error");
 const errorCode = document.getElementById("sj-error-code");
 
-const { ScramjetController } = $scramjetLoadController();
+// Detect if we're inside a Scramjet proxy by checking the error stack.
+// Stack traces contain real (engine-level) URLs, not Scramjet-wrapped ones.
+// If our script URL in the stack contains the proxy prefix, we're nested.
+function isProxiedContext() {
+	try {
+		const stack = new Error().stack || "";
+		if (stack.includes("/scramjet/")) return true;
+	} catch (e) {}
+	return false;
+}
 
-const scramjet = new ScramjetController({
-	files: {
-		wasm: "/scram/scramjet.wasm.wasm",
-		all: "/scram/scramjet.all.js",
-		sync: "/scram/scramjet.sync.js",
-	},
-});
+const proxied = isProxiedContext();
 
-scramjet.init();
+let scramjet, connection;
 
-const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+if (!proxied) {
+	const { ScramjetController } = $scramjetLoadController();
+
+	scramjet = new ScramjetController({
+		files: {
+			wasm: "/scram/scramjet.wasm.wasm",
+			all: "/scram/scramjet.all.js",
+			sync: "/scram/scramjet.sync.js",
+		},
+	});
+
+	scramjet.init();
+
+	connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+}
 
 async function navigate(url) {
+	if (proxied) {
+		window.location.href = url;
+		return;
+	}
+
 	try {
 		await registerSW();
 	} catch (err) {
