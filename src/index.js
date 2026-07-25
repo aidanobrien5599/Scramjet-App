@@ -5,11 +5,11 @@ import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 
-import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
+const scramjetLocalPath = fileURLToPath(new URL("../public/scram/", import.meta.url));
 
 // Wisp Configuration: Refer to the documentation at https://www.npmjs.com/package/@mercuryworkshop/wisp-js
 
@@ -41,7 +41,7 @@ fastify.register(fastifyStatic, {
 });
 
 fastify.register(fastifyStatic, {
-	root: scramjetPath,
+	root: scramjetLocalPath,
 	prefix: "/scram/",
 	decorateReply: false,
 });
@@ -56,6 +56,51 @@ fastify.register(fastifyStatic, {
 	root: baremuxPath,
 	prefix: "/baremux/",
 	decorateReply: false,
+});
+
+fastify.get("/scramjet/*", (req, reply) => {
+	const encoded = req.url.replace("/scramjet/", "");
+	const targetUrl = decodeURIComponent(encoded);
+	reply.type("text/html").send(`<!doctype html>
+<html><head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Loading...</title>
+<script src="/scram/scramjet.all.js"></script>
+<script src="/baremux/index.js"></script>
+<script src="/register-sw.js"></script>
+<script src="/search.js"></script>
+<script>
+const TARGET = ${JSON.stringify(targetUrl)};
+(async () => {
+	try {
+		await registerSW();
+		const { ScramjetController } = $scramjetLoadController();
+		const scramjet = new ScramjetController({
+			files: { wasm: "/scram/scramjet.wasm.wasm", all: "/scram/scramjet.all.js", sync: "/scram/scramjet.sync.js" }
+		});
+		await scramjet.init();
+		const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+		const wispUrl = (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host + "/wisp/";
+		if ((await connection.getTransport()) !== "/libcurl/index.mjs") {
+			await connection.setTransport("/libcurl/index.mjs", [{ websocket: wispUrl }]);
+		}
+		const frame = scramjet.createFrame();
+		frame.frame.style.cssText = "position:fixed;inset:0;width:100%;height:100%;border:none;z-index:1";
+		document.body.appendChild(frame.frame);
+		frame.go(TARGET);
+	} catch (err) {
+		document.getElementById("msg").textContent = "Failed to load: " + err.message;
+	}
+})();
+</script>
+<style>
+body { background:#1C1C1C; color:#888; font-family:monospace; margin:0; }
+#loader { display:flex; align-items:center; justify-content:center; height:100vh; }
+</style>
+</head><body>
+<div id="loader"><p id="msg">Loading...</p></div>
+</body></html>`);
 });
 
 fastify.setNotFoundHandler((res, reply) => {
