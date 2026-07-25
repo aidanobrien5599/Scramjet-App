@@ -68,13 +68,11 @@ fastify.get("/scramjet/*", (req, reply) => {
 <title>Loading...</title>
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js"></script>
-<script src="/register-sw.js"></script>
-<script src="/search.js"></script>
 <script>
 const TARGET = ${JSON.stringify(targetUrl)};
 (async () => {
 	try {
-		await registerSW();
+		await navigator.serviceWorker.register("/sw.js");
 		const { ScramjetController } = $scramjetLoadController();
 		const scramjet = new ScramjetController({
 			files: { wasm: "/scram/scramjet.wasm.wasm", all: "/scram/scramjet.all.js", sync: "/scram/scramjet.sync.js" }
