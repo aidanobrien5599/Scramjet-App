@@ -1,23 +1,9 @@
 "use strict";
-/**
- * @type {HTMLFormElement}
- */
+
 const form = document.getElementById("sj-form");
-/**
- * @type {HTMLInputElement}
- */
 const address = document.getElementById("sj-address");
-/**
- * @type {HTMLInputElement}
- */
 const searchEngine = document.getElementById("sj-search-engine");
-/**
- * @type {HTMLParagraphElement}
- */
 const error = document.getElementById("sj-error");
-/**
- * @type {HTMLPreElement}
- */
 const errorCode = document.getElementById("sj-error-code");
 
 const { ScramjetController } = $scramjetLoadController();
@@ -34,9 +20,7 @@ scramjet.init();
 
 const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
 
-form.addEventListener("submit", async (event) => {
-	event.preventDefault();
-
+async function navigate(url) {
 	try {
 		await registerSW();
 	} catch (err) {
@@ -44,8 +28,6 @@ form.addEventListener("submit", async (event) => {
 		errorCode.textContent = err.toString();
 		throw err;
 	}
-
-	const url = search(address.value, searchEngine.value);
 
 	let wispUrl =
 		(location.protocol === "https:" ? "wss" : "ws") +
@@ -61,4 +43,18 @@ form.addEventListener("submit", async (event) => {
 	frame.frame.id = "sj-frame";
 	document.body.appendChild(frame.frame);
 	frame.go(url);
+}
+
+form.addEventListener("submit", async (event) => {
+	event.preventDefault();
+	const url = search(address.value, searchEngine.value);
+	navigate(url);
+});
+
+document.querySelectorAll(".quick-link").forEach((link) => {
+	link.addEventListener("click", (e) => {
+		e.preventDefault();
+		const url = link.dataset.url;
+		if (url) navigate(url);
+	});
 });
