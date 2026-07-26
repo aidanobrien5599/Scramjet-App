@@ -44,6 +44,10 @@ fastify.register(fastifyStatic, {
 	root: scramjetLocalPath,
 	prefix: "/scram/",
 	decorateReply: false,
+	cacheControl: false,
+	setHeaders: (res) => {
+		res.setHeader("Cache-Control", "no-cache");
+	},
 });
 
 fastify.register(fastifyStatic, {

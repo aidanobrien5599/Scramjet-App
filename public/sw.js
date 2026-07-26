@@ -1,3 +1,4 @@
+// cache-bust: v2 - patched same-origin check
 importScripts("/scram/scramjet.all.js");
 
 const { ScramjetServiceWorker } = $scramjetLoadWorker();
