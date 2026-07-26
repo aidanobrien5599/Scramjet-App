@@ -70,7 +70,7 @@ fastify.get("/scramjet/*", (req, reply) => {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Loading...</title>
-<script src="/scram/scramjet.all.js"></script>
+<script src="/scram/scramjet.patched.js"></script>
 <script src="/baremux/index.js"></script>
 <script>
 const TARGET = ${JSON.stringify(targetUrl)};
@@ -79,7 +79,7 @@ const TARGET = ${JSON.stringify(targetUrl)};
 		await navigator.serviceWorker.register("/sw.js");
 		const { ScramjetController } = $scramjetLoadController();
 		const scramjet = new ScramjetController({
-			files: { wasm: "/scram/scramjet.wasm.wasm", all: "/scram/scramjet.all.js", sync: "/scram/scramjet.sync.js" }
+			files: { wasm: "/scram/scramjet.wasm.wasm", all: "/scram/scramjet.patched.js", sync: "/scram/scramjet.sync.js" }
 		});
 		await scramjet.init();
 		const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
